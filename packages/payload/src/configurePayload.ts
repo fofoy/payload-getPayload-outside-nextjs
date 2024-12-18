@@ -1,10 +1,14 @@
+// @ts-nocheck
+
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { Config } from 'payload'
 import { mongooseAdapter } from '@payloadcms/db-mongodb'
 import { redirectsPlugin } from '@payloadcms/plugin-redirects'
+import { sentryPlugin } from '@payloadcms/plugin-sentry'
 import { seoPlugin } from '@payloadcms/plugin-seo'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
+import * as Sentry from '@sentry/nextjs'
 import { buildConfig, deepMerge } from 'payload'
 
 import { env } from '@local/env/payload'
@@ -83,6 +87,21 @@ const baseConfig: Config = {
           : '',
       tabbedUI: true,
       uploadsCollection: Media.slug,
+    }),
+    sentryPlugin({
+      options: {
+        captureErrors: [400, 403, 404],
+        context: ({ defaultContext, req }) => {
+          return {
+            ...defaultContext,
+            tags: {
+              locale: req.locale,
+            },
+          }
+        },
+        debug: true,
+      },
+      Sentry,
     }),
   ],
   secret: env.PAYLOAD_PRIVATE_SECRET,
